@@ -3,7 +3,7 @@ import "./Rating.css";
 const RATINGS = [1, 2, 3, 4, 5];
 
 function Star({ selected = false, Rating, onSelect, onHover }) {
-  const className = `Rating-star ${selected ? "selected" : ""}`;
+  const className = `Rating-star ${selected ? "selected" : " "}`;
 
   const handleClick = onSelect ? () => onSelect(Rating) : undefined;
 
