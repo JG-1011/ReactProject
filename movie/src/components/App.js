@@ -1,6 +1,7 @@
 import ReviewList from "./ReviewList";
 import { useEffect, useState } from "react";
 import { getReviews } from "../api";
+import ReviewForm from "./ReviewForm";
 
 const LIMIT = 6;
 
@@ -10,8 +11,9 @@ function App() {
   const [offset, setOffet] = useState(0); // 페이지네이션을 위해서
   const [hasNext, setHasNext] = useState(false); // 페이지네이션에서 마지막 부분 처리하기 위해서
   const [isLoading, setIsLoading] = useState(false); // 더보기를 한번에 여러번 눌러버리면 request요청이 여러번이 나감 그걸 방지하기 위해
+  const [loadingError, setLoadingError] = useState(null);
 
-  const sortItems = items.sort((a, b) => b[order] - a[order]);
+  const sortedItems = items.sort((a, b) => b[order] - a[order]);
 
   const handleNewestClick = () => setOrder("createdAt");
   const handleBestClick = () => setOrder("rating");
@@ -23,10 +25,11 @@ function App() {
   const handleLoad = async (options) => {
     let result;
     try {
+      setLoadingError(null);
       setIsLoading(true);
       result = await getReviews(options);
     } catch (error) {
-      console.error(error);
+      setLoadingError(error);
       return;
     } finally {
       setIsLoading(false);
@@ -52,8 +55,12 @@ function App() {
   //데이터의 개수가 많은 경우에 일부 데이터만 받아오게 되는데요 (예를들어서 42개 중에 10개만 받아오는 식)
   //만약에 리뷰 평점 순으로 정렬한 다음에 제일 높은 순으로 10개를 가져오려면 이건 서버에서 정렬을 해줘야 합니다.
 
-  const handleLoadMore = () => {
-    handleLoad({ order, offset, limit: LIMIT });
+  const handleLoadMore = async () => {
+    await handleLoad({ order, offset, limit: LIMIT });
+  };
+
+  const handleSubmitSuccess = (review) => {
+    setItems((preItems) => [review, ...preItems]);
   };
 
   useEffect(() => {
@@ -64,14 +71,16 @@ function App() {
     <div>
       <div>
         <button onClick={handleNewestClick}>최신순</button>
-        <button onClick={handleBestClick}>별점순</button>
+        <button onClick={handleBestClick}>베스트순</button>
       </div>
-      <ReviewList items={sortItems} onDelete={handleDelete} />
+      <ReviewForm onSubmitSuccess={handleSubmitSuccess} />
+      <ReviewList items={sortedItems} onDelete={handleDelete} />
       {hasNext && (
         <button disabled={isLoading} onClick={handleLoadMore}>
           더 보기
         </button>
       )}
+      {loadingError?.message && <span>{loadingError.message}</span>}
     </div>
   );
 }
